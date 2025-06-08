@@ -7,5 +7,5 @@ Pillow
 torch
 numpy
 seaborn
-requtses
+requests
 
