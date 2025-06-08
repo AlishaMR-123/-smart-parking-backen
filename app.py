@@ -1,4 +1,5 @@
-# server/venv/app.py
+# server/app.py
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from PIL import Image
@@ -6,8 +7,29 @@ import os, io, json
 import numpy as np
 import torch
 import sys
+import requests
+
 sys.path.append(os.path.join(os.path.dirname(__file__), 'yolov5'))
 
+# Auto-download .pt files from HuggingFace if not present
+def download_if_missing(url, local_path):
+    if not os.path.exists(local_path):
+        print(f"Downloading {url} to {local_path}...")
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        r = requests.get(url)
+        with open(local_path, 'wb') as f:
+            f.write(r.content)
+
+# HuggingFace URLs
+download_if_missing(
+    "https://huggingface.co/spaces/Alishaaa199/yolo-vehicle-detection/resolve/main/final_best_kuek.pt",
+    "./models/final_best_kuek.pt"
+)
+
+download_if_missing(
+    "https://huggingface.co/spaces/Alishaaa199/yolo-vehicle-detection/resolve/main/final_best-tara.pt",
+    "./models/final_best-tara.pt"
+)
 
 # YOLOv8 loader
 from ultralytics import YOLO as YOLOv8
@@ -23,7 +45,7 @@ yolov8_model = YOLOv8("./models/final_best-tara.pt")
 yolov5_model = DetectMultiBackend("./models/final_best_kuek.pt", device='cpu')
 
 # Path to client public JSONs
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../client/public'))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), './json'))
 
 def load_json(filename):
     path = os.path.join(BASE_DIR, filename)
@@ -69,7 +91,6 @@ def predict_with_yolov5(img_pil):
 
     # Return count
     return len(pred[0]) if pred[0] is not None else 0
-
 
 def predict_with_yolov8(img_pil):
     results = yolov8_model(img_pil)
