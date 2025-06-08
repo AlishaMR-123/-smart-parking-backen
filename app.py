@@ -1,5 +1,4 @@
-# server/app.py
-
+# server/venv/app.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from PIL import Image
@@ -7,26 +6,7 @@ import os, io, json
 import numpy as np
 import torch
 import sys
-import requests
-
 sys.path.append(os.path.join(os.path.dirname(__file__), 'yolov5'))
-
-# Hugging Face model URLs
-YOLOV8_MODEL_URL = "https://huggingface.co/spaces/Alishaaa199/yolo-vehicle-detection/resolve/main/final_best-tara.pt"
-YOLOV5_MODEL_URL = "https://huggingface.co/spaces/Alishaaa199/yolo-vehicle-detection/resolve/main/final_best_kuek.pt"
-
-# Download model if not present
-def download_model(url, local_path):
-    if not os.path.exists(local_path):
-        print(f"Downloading {url} to {local_path} ...")
-        r = requests.get(url, stream=True)
-        with open(local_path, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                f.write(chunk)
-        print(f"Downloaded {local_path} ✅")
-
-# Create models directory if needed
-os.makedirs("models", exist_ok=True)
 
 
 # YOLOv8 loader
@@ -38,18 +18,13 @@ from yolov5.utils.general import non_max_suppression
 app = Flask(__name__)
 CORS(app)
 
-# Download models
-download_model(YOLOV8_MODEL_URL, "models/final_best-tara.pt")
-download_model(YOLOV5_MODEL_URL, "models/final_best_kuek.pt")
-
 # Load models
-yolov8_model = YOLOv8("models/final_best-tara.pt")
-yolov5_model = DetectMultiBackend("models/final_best_kuek.pt", device='cpu')
-
+yolov8_model = YOLOv8("../models/final_best-tara.pt")
+yolov5_model = DetectMultiBackend("../models/final_best_kuek.pt", device='cpu')
 
 # Path to client public JSONs
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'json'))
-os.makedirs(BASE_DIR, exist_ok=True)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../client/public'))
+
 def load_json(filename):
     path = os.path.join(BASE_DIR, filename)
     if os.path.exists(path):
@@ -94,6 +69,7 @@ def predict_with_yolov5(img_pil):
 
     # Return count
     return len(pred[0]) if pred[0] is not None else 0
+
 
 def predict_with_yolov8(img_pil):
     results = yolov8_model(img_pil)
