@@ -1,7 +1,5 @@
 gradio
-torch
+fastapi
+uvicorn
+pillow
 ultralytics
-opencv-python
-Pillow
-numpy
-git+https://github.com/ultralytics/yolov5.git
