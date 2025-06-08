@@ -1,30 +1,44 @@
-# server/venv/app.py
+# server/app.py
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from PIL import Image
 import os, io, json
 import numpy as np
-import torch
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), 'yolov5'))
-
-
-# YOLOv8 loader
+import requests
 from ultralytics import YOLO as YOLOv8
-# YOLOv5 loader (DetectMultiBackend from yolov5 repo)
-from yolov5.models.common import DetectMultiBackend
-from yolov5.utils.general import non_max_suppression
 
+# Hugging Face model URL (YOLOv8)
+YOLOV8_MODEL_URL = "https://huggingface.co/spaces/Alishaaa199/yolo-vehicle-detection/resolve/main/final_best-tara.pt"
+
+# Download model if not present
+def download_model(url, local_path):
+    if not os.path.exists(local_path):
+        print(f"Downloading {url} to {local_path} ...")
+        r = requests.get(url, stream=True)
+        with open(local_path, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+        print(f"Downloaded {local_path} ✅")
+
+# Create models directory if needed
+os.makedirs("models", exist_ok=True)
+
+# Download model
+download_model(YOLOV8_MODEL_URL, "models/final_best-tara.pt")
+
+# Load model
+yolov8_model = YOLOv8("models/final_best-tara.pt")
+
+# Init Flask
 app = Flask(__name__)
 CORS(app)
 
-# Load models
-yolov8_model = YOLOv8("../models/final_best-tara.pt")
-yolov5_model = DetectMultiBackend("../models/final_best_kuek.pt", device='cpu')
-
 # Path to client public JSONs
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../client/public'))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'json'))
+os.makedirs(BASE_DIR, exist_ok=True)
 
+# JSON utils
 def load_json(filename):
     path = os.path.join(BASE_DIR, filename)
     if os.path.exists(path):
@@ -37,6 +51,7 @@ def save_json(filename, data):
     with open(path, 'w') as f:
         json.dump(data, f, indent=2)
 
+# Format hour
 def format_hour(hour_str):
     hour = int(hour_str.split(":")[0])
     if hour == 0:
@@ -48,45 +63,21 @@ def format_hour(hour_str):
     else:
         return f"{hour - 12}pm"
 
-def predict_with_yolov5(img_pil):
-    import cv2
-    from yolov5.utils.augmentations import letterbox
-
-    # Convert PIL to OpenCV image (BGR)
-    img_cv = cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
-
-    # Resize using letterbox
-    img_resized = letterbox(img_cv, new_shape=640)[0]
-    img_transposed = img_resized.transpose((2, 0, 1))  # HWC to CHW
-    img_normalized = np.ascontiguousarray(img_transposed, dtype=np.float32) / 255.0
-
-    # Convert to tensor
-    img_tensor = torch.from_numpy(img_normalized).unsqueeze(0).to(yolov5_model.device)
-
-    # Inference
-    pred = yolov5_model(img_tensor, augment=False, visualize=False)
-    pred = non_max_suppression(pred, conf_thres=0.25, iou_thres=0.45)
-
-    # Return count
-    return len(pred[0]) if pred[0] is not None else 0
-
-
+# Predict with YOLOv8
 def predict_with_yolov8(img_pil):
     results = yolov8_model(img_pil)
     return len(results[0].boxes)
 
+# /predict endpoint
 @app.route('/predict', methods=['POST'])
 def predict():
     image = Image.open(io.BytesIO(request.files['image'].read()))
     location = request.form['location']
     date = request.form['date']
     time = request.form['time']
-    model_choice = request.form.get('model', 'YOLOv8')
 
-    if model_choice == 'YOLOv5':
-        count = predict_with_yolov5(image)
-    else:
-        count = predict_with_yolov8(image)
+    # Predict
+    count = predict_with_yolov8(image)
 
     # Metadata formatting
     is_outdoor = 'outdoor' in location.lower()
@@ -117,5 +108,6 @@ def predict():
 
     return jsonify({"success": True, "count": count})
 
+# Run app
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
