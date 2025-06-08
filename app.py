@@ -11,25 +11,23 @@ import requests
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'yolov5'))
 
-# Auto-download .pt files from HuggingFace if not present
-def download_if_missing(url, local_path):
+# Hugging Face model URLs
+YOLOV8_MODEL_URL = "https://huggingface.co/spaces/Alishaaa199/yolo-vehicle-detection/resolve/main/final_best-tara.pt"
+YOLOV5_MODEL_URL = "https://huggingface.co/spaces/Alishaaa199/yolo-vehicle-detection/resolve/main/final_best_kuek.pt"
+
+# Download model if not present
+def download_model(url, local_path):
     if not os.path.exists(local_path):
-        print(f"Downloading {url} to {local_path}...")
-        os.makedirs(os.path.dirname(local_path), exist_ok=True)
-        r = requests.get(url)
+        print(f"Downloading {url} to {local_path} ...")
+        r = requests.get(url, stream=True)
         with open(local_path, 'wb') as f:
-            f.write(r.content)
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+        print(f"Downloaded {local_path} ✅")
 
-# HuggingFace URLs
-download_if_missing(
-    "https://huggingface.co/spaces/Alishaaa199/yolo-vehicle-detection/resolve/main/final_best_kuek.pt",
-    "./models/final_best_kuek.pt"
-)
+# Create models directory if needed
+os.makedirs("models", exist_ok=True)
 
-download_if_missing(
-    "https://huggingface.co/spaces/Alishaaa199/yolo-vehicle-detection/resolve/main/final_best-tara.pt",
-    "./models/final_best-tara.pt"
-)
 
 # YOLOv8 loader
 from ultralytics import YOLO as YOLOv8
@@ -40,13 +38,18 @@ from yolov5.utils.general import non_max_suppression
 app = Flask(__name__)
 CORS(app)
 
+# Download models
+download_model(YOLOV8_MODEL_URL, "models/final_best-tara.pt")
+download_model(YOLOV5_MODEL_URL, "models/final_best_kuek.pt")
+
 # Load models
-yolov8_model = YOLOv8("./models/final_best-tara.pt")
-yolov5_model = DetectMultiBackend("./models/final_best_kuek.pt", device='cpu')
+yolov8_model = YOLOv8("models/final_best-tara.pt")
+yolov5_model = DetectMultiBackend("models/final_best_kuek.pt", device='cpu')
+
 
 # Path to client public JSONs
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), './json'))
-
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'json'))
+os.makedirs(BASE_DIR, exist_ok=True)
 def load_json(filename):
     path = os.path.join(BASE_DIR, filename)
     if os.path.exists(path):

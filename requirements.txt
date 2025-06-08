@@ -1,8 +1,11 @@
 flask
 flask-cors
+flask_cors
 ultralytics
 opencv-python
 Pillow
 torch
 numpy
 seaborn
+requtses
+
