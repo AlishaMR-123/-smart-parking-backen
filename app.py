@@ -34,7 +34,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Path to client public JSONs
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(_file_), 'json'))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'json'))
 os.makedirs(BASE_DIR, exist_ok=True)
 
 # JSON utils
