@@ -1,5 +1,7 @@
-gradio
-fastapi
-uvicorn
-pillow
+flask
+flask-cors
 ultralytics
+opencv-python
+Pillow
+torch
+numpy
