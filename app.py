@@ -30,7 +30,7 @@ download_model(YOLOV8_MODEL_URL, "models/final_best-tara.pt")
 yolov8_model = YOLOv8("models/final_best-tara.pt")
 
 # Init Flask
-app = Flask(_name_)
+app = Flask(__name__)
 CORS(app)
 
 # Path to client public JSONs
@@ -108,6 +108,6 @@ def predict():
     return jsonify({"success": True, "count": count})
 
 # Run app
-if _name_ == '_main_':
+if __name__ == '_main_':
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
