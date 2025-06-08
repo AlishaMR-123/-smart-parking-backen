@@ -19,11 +19,11 @@ app = Flask(__name__)
 CORS(app)
 
 # Load models
-yolov8_model = YOLOv8("./models/final_best-tara.pt")
-yolov5_model = DetectMultiBackend("./models/final_best_kuek.pt", device='cpu')
+yolov8_model = YOLOv8("models/final_best-tara.pt")
+yolov5_model = DetectMultiBackend("models/final_best_kuek.pt", device='cpu')
 
 # Path to client public JSONs
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../client/public'))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), './json'))
 
 def load_json(filename):
     path = os.path.join(BASE_DIR, filename)
