@@ -1,11 +1,10 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from PIL import Image
 import os, io, json
 import numpy as np
 import requests
 from ultralytics import YOLO as YOLOv8
-
 
 # Hugging Face model URL (YOLOv8)
 YOLOV8_MODEL_URL = "https://huggingface.co/spaces/Alishaaa199/yolo-vehicle-detection/resolve/main/final_best-tara.pt"
@@ -64,6 +63,7 @@ def format_hour(hour_str):
 
 # Predict with YOLOv8
 def predict_with_yolov8(img_pil):
+    img_pil = img_pil.resize((640, 640))  # Resize for memory efficiency ✅
     results = yolov8_model(img_pil)
     return len(results[0].boxes)
 
@@ -106,6 +106,19 @@ def predict():
     save_json("combined_occupancy.json", combined_data)
 
     return jsonify({"success": True, "count": count})
+
+
+@app.route('/popular_times_indoor.json')
+def serve_popular_times_indoor():
+    return send_from_directory(BASE_DIR, 'popular_times_Indoor.json')  # Note: filename uses 'Indoor' capital I!
+
+@app.route('/popular_times_outdoor.json')
+def serve_popular_times_outdoor():
+    return send_from_directory(BASE_DIR, 'popular_times_outdoor.json')
+
+@app.route('/combined_occupancy.json')
+def serve_combined_occupancy():
+    return send_from_directory(BASE_DIR, 'combined_occupancy.json')
 
 # Run app
 if __name__ == '__main__':
