@@ -110,7 +110,7 @@ def predict():
 
 @app.route('/popular_times_indoor.json')
 def serve_popular_times_indoor():
-    return send_from_directory(BASE_DIR, 'popular_times_Indoor.json')  # Note: filename uses 'Indoor' capital I!
+    return send_from_directory(BASE_DIR, 'popular_times_indoor.json') 
 
 @app.route('/popular_times_outdoor.json')
 def serve_popular_times_outdoor():
